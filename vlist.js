@@ -78,11 +78,13 @@ function VirtualList(config) {
   this.container.addEventListener('scroll', onScroll);
 }
 
-VirtualList.prototype.createRow = function(i) {
+VirtualList.prototype.createRow = function(i, count) {
   var item;
-  if (this.generatorFn)
+  if (this.generatorFn && !this.items) {
     item = this.generatorFn(i);
-  else if (this.items) {
+  } else if (this.generatorFn && this.items) {
+    item = this.generatorFn(i, this.items[i])
+  } else if (this.items) {
     if (typeof this.items[i] === 'string') {
       var itemText = document.createTextNode(this.items[i]);
       item = document.createElement('div');
@@ -94,8 +96,7 @@ VirtualList.prototype.createRow = function(i) {
   }
 
   item.classList.add('vrow');
-  item.style.position = 'absolute';
-  item.style.top = (i * this.itemHeight) + 'px';
+  item.style.transform = 'translateY(' + ((i - count) * this.itemHeight) +'px)';
   return item;
 };
 
@@ -117,8 +118,10 @@ VirtualList.prototype._renderChunk = function(node, from) {
   // Append all the new rows in a document fragment that we will later append to
   // the parent node
   var fragment = document.createDocumentFragment();
+  var count = 0
   for (var i = from; i < finalItem; i++) {
-    fragment.appendChild(this.createRow(i));
+    fragment.appendChild(this.createRow(i, count));
+    count++
   }
 
   // Hide and mark obsolete nodes for deletion.
@@ -136,7 +139,6 @@ VirtualList.createContainer = function(w, h) {
   c.style.overflow = 'auto';
   c.style.position = 'relative';
   c.style.padding = 0;
-  c.style.border = '1px solid black';
   return c;
 };
 
